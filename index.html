@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор ремонта квартиры</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 107, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(72, 219, 251, 0.1) 0%, transparent 50%);
+            animation: backgroundShift 20s ease infinite;
+            pointer-events: none;
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-30px, -30px); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 680px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card {
+            background: rgba(20, 20, 28, 0.7);
+            backdrop-filter: blur(40px);
+            border-radius: 24px;
+            box-shadow: 
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 100px rgba(120, 119, 198, 0.1);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+        }
+
+        /* Glow effect on top */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(120, 119, 198, 0.8) 20%, 
+                rgba(255, 107, 107, 0.8) 50%, 
+                rgba(72, 219, 251, 0.8) 80%, 
+                transparent
+            );
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7877c6 0%, #ff6b6b 50%, #48dbfb 100%);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 0%;
+            position: relative;
+            box-shadow: 0 0 20px rgba(120, 119, 198, 0.5);
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3));
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(100%); }
+        }
+
+        .card-body {
+            padding: 40px 28px;
+        }
+
+        .step {
+            display: none;
+            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .step-indicator {
+            color: #7877c6;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: inline-block;
+            padding: 6px 14px;
+            background: rgba(120, 119, 198, 0.15);
+            border-radius: 20px;
+            border: 1px solid rgba(120, 119, 198, 0.3);
+        }
+
+        h2 {
+            font-size: 32px;
+            background: linear-gradient(135deg, #ffffff 0%, #a8a8b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            color: #8b8b9a;
+            font-size: 15px;
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .option {
+            background: rgba(30, 30, 42, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 20px 22px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(120, 119, 198, 0.15) 0%, rgba(255, 107, 107, 0.15) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .option:active {
+            transform: scale(0.98);
+        }
+
+        .option:hover {
+            border-color: rgba(120, 119, 198, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 10px 40px rgba(120, 119, 198, 0.2),
+                0 0 0 1px rgba(120, 119, 198, 0.1);
+        }
+
+        .option:hover::before {
+            opacity: 1;
+        }
+
+        .option.selected {
+            border-color: #7877c6;
+            background: rgba(120, 119, 198, 0.15);
+            box-shadow: 
+                0 0 30px rgba(120, 119, 198, 0.3),
+                inset 0 0 0 1px rgba(120, 119, 198, 0.3);
+        }
+
+        .option.selected::before {
+            opacity: 1;
+        }
+
+        .option-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .option-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 5px;
+            letter-spacing: -0.3px;
+        }
+
+        .option-desc {
+            font-size: 13px;
+            color: #8b8b9a;
+            line-height: 1.5;
+            font-weight: 400;
+        }
+
+        .option-badge {
+            position: absolute;
+            top: 20px;
+            right: 22px;
+            background: linear-gradient(135deg, #7877c6 0%, #ff6b6b 100%);
+            color: white;
+            font-size: 10px;
+            padding: 5px 12px;
+            border-radius: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(120, 119, 198, 0.4);
+            z-index: 2;
+        }
+
+        .input-group {
+            margin-bottom: 30px;
+        }
+
+        .input-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 14px;
+            display: block;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 18px 20px;
+            background: rgba(30, 30, 42, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #7877c6;
+            background: rgba(120, 119, 198, 0.1);
+            box-shadow: 
+                0 0 0 4px rgba(120, 119, 198, 0.15),
+                0 0 30px rgba(120, 119, 198, 0.2);
+        }
+
+        .input-suffix {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b6b7a;
+            font-size: 16px;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            border-radius: 10px;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+            position: relative;
+        }
+
+        input[type="range"]::-webkit-slider-track {
+            width: 100%;
+            height: 8px;
+            background: transparent;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7877c6 0%, #ff6b6b 100%);
+            cursor: pointer;
+            box-shadow: 
+                0 4px 15px rgba(120, 119, 198, 0.5),
+                0 0 0 4px rgba(120, 119, 198, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 
+                0 6px 20px rgba(120, 119, 198, 0.6),
+                0 0 0 6px rgba(120, 119, 198, 0.25);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7877c6 0%, #ff6b6b 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 
+                0 4px 15px rgba(120, 119, 198, 0.5),
+                0 0 0 4px rgba(120, 119, 198, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .range-value {
+            text-align: center;
+            font-size: 40px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #7877c6 0%, #ff6b6b 50%, #48dbfb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-top: 18px;
+            letter-spacing: -1px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .checkbox-item {
+            background: rgba(30, 30, 42, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 16px 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .checkbox-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(120, 119, 198, 0.1) 0%, rgba(255, 107, 107, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .checkbox-item:active {
+            transform: scale(0.98);
+        }
+
+        .checkbox-item.checked {
+            border-color: #7877c6;
+            background: rgba(120, 119, 198, 0.15);
+            box-shadow: 0 0 20px rgba(120, 119, 198, 0.2);
+        }
+
+        .checkbox-item.checked::before {
+            opacity: 1;
+        }
+
+        /* Custom checkbox */
+        .checkbox-item input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            min-width: 22px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: rgba(30, 30, 42, 0.8);
+            cursor: pointer;
+            position: relative;
+            margin: 0;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked {
+            background: linear-gradient(135deg, #7877c6 0%, #ff6b6b 100%);
+            border-color: #7877c6;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .checkbox-label {
+            font-size: 15px;
+            color: #ffffff;
+            font-weight: 500;
+            cursor: pointer;
+            line-height: 1.4;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 18px 28px;
+            border: none;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Inter', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7877c6 0%, #ff6b6b 100%);
+            color: white;
+            box-shadow: 
+                0 10px 30px rgba(120, 119, 198, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 15px 40px rgba(120, 119, 198, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: rgba(30, 30, 42, 0.8);
+            color: #8b8b9a;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(50, 50, 62, 0.8);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .result-screen {
+            text-align: center;
+        }
+
+        .result-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            animation: floatIcon 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(120, 119, 198, 0.6));
+        }
+
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .result-title {
+            font-size: 26px;
+            background: linear-gradient(135deg, #ffffff 0%, #a8a8b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 30px;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
+        .price-range {
+            background: linear-gradient(135deg, rgba(120, 119, 198, 0.15) 0%, rgba(255, 107, 107, 0.15) 100%);
+            border: 2px solid rgba(120, 119, 198, 0.3);
+            border-radius: 20px;
+            padding: 32px 24px;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 0 40px rgba(120, 119, 198, 0.2),
+                inset 0 0 60px rgba(120, 119, 198, 0.05);
+        }
+
+        .price-range::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.03) 50%,
+                transparent 70%
+            );
+            animation: shimmerBackground 6s linear infinite;
+        }
+
+        @keyframes shimmerBackground {
+            0% { transform: translateX(-50%) translateY(-50%) rotate(0deg); }
+            100% { transform: translateX(-50%) translateY(-50%) rotate(360deg); }
+        }
+
+        .price-label {
+            font-size: 12px;
+            color: #8b8b9a;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+
+        .price-value {
+            font-size: 38px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #7877c6 0%, #ff6b6b 50%, #48dbfb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+            margin-bottom: 14px;
+            letter-spacing: -1px;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 0 20px rgba(120, 119, 198, 0.5));
+        }
+
+        .price-note {
+            font-size: 12px;
+            color: #6b6b7a;
+            font-style: italic;
+            position: relative;
+            z-index: 1;
+            line-height: 1.5;
+        }
+
+        .summary {
+            background: rgba(30, 30, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 28px;
+            text-align: left;
+            backdrop-filter: blur(10px);
+        }
+
+        .summary-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 18px;
+            letter-spacing: -0.3px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 14px;
+            gap: 12px;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            color: #8b8b9a;
+            font-weight: 500;
+        }
+
+        .summary-value {
+            color: #ffffff;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .messenger-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn-messenger {
+            flex: 1;
+            padding: 18px 28px;
+            border: none;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-messenger::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-messenger:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-messenger:active {
+            transform: scale(0.97);
+        }
+
+        .btn-messenger span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-whatsapp {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            box-shadow: 0 10px 30px rgba(37, 211, 102, 0.4);
+        }
+
+        .btn-whatsapp:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(37, 211, 102, 0.5);
+        }
+
+        .btn-telegram {
+            background: linear-gradient(135deg, #0088cc 0%, #005885 100%);
+            box-shadow: 0 10px 30px rgba(0, 136, 204, 0.4);
+        }
+
+        .btn-telegram:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0, 136, 204, 0.5);
+        }
+
+        .btn-restart {
+            background: transparent;
+            color: #7877c6;
+            border: 2px solid rgba(120, 119, 198, 0.4);
+            margin-top: 14px;
+        }
+
+        .btn-restart:hover {
+            background: rgba(120, 119, 198, 0.15);
+            border-color: #7877c6;
+            color: #ffffff;
+        }
+
+        /* Particles effect */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(120, 119, 198, 0.3);
+            border-radius: 50%;
+            animation: particleFloat 15s infinite;
+        }
+
+        @keyframes particleFloat {
+            0%, 100% {
+                transform: translate(0, 0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(100px, -1000px);
+                opacity: 0;
+            }
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+
+            .card {
+                border-radius: 20px;
+            }
+
+            .card-body {
+                padding: 32px 20px;
+            }
+
+            h2 {
+                font-size: 26px;
+            }
+
+            .subtitle {
+                font-size: 14px;
+            }
+
+            .option {
+                padding: 18px 18px;
+            }
+
+            .option-title {
+                font-size: 16px;
+            }
+
+            .option-desc {
+                font-size: 12px;
+            }
+
+            .option-badge {
+                font-size: 9px;
+                padding: 4px 10px;
+                top: 18px;
+                right: 18px;
+            }
+
+            .checkbox-item {
+                padding: 14px 16px;
+                gap: 10px;
+            }
+
+            .checkbox-item input[type="checkbox"] {
+                width: 20px;
+                height: 20px;
+                min-width: 20px;
+            }
+
+            .checkbox-label {
+                font-size: 14px;
+            }
+
+            .btn {
+                padding: 16px 24px;
+                font-size: 14px;
+            }
+
+            .price-value {
+                font-size: 32px;
+            }
+
+            .messenger-buttons {
+                flex-direction: column;
+            }
+
+            .range-value {
+                font-size: 34px;
+            }
+
+            .result-title {
+                font-size: 22px;
+            }
+
+            .summary {
+                padding: 20px;
+            }
+
+            .summary-item {
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .card-body {
+                padding: 28px 18px;
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+
+            .option {
+                padding: 16px 16px;
+            }
+
+            .price-value {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <div class="container">
+        <div class="card">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+            <div class="card-body">
+                <!-- Step 1: Тип объекта -->
+                <div class="step active" data-step="1">
+                    <div class="step-indicator">Шаг 1 из 4</div>
+                    <h2>Какой у вас объект?</h2>
+                    <p class="subtitle">Это определяет базовый объём работ</p>
+                    
+                    <div class="options">
+                        <div class="option" data-value="newbuild-concrete">
+                            <div class="option-content">
+                                <div class="option-title">Новостройка (бетон)</div>
+                                <div class="option-desc">Свободная планировка, требуется полный комплекс работ</div>
+                            </div>
+                            <div class="option-badge">Популярно</div>
+                        </div>
+                        <div class="option" data-value="newbuild-whitebox">
+                            <div class="option-content">
+                                <div class="option-title">Новостройка (white box)</div>
+                                <div class="option-desc">Черновая отделка выполнена застройщиком</div>
+                            </div>
+                        </div>
+                        <div class="option" data-value="secondary">
+                            <div class="option-content">
+                                <div class="option-title">Вторичное жильё</div>
+                                <div class="option-desc">Требуется демонтаж и устранение старых конструкций</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="nextStep1" disabled><span>Продолжить</span></button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Площадь -->
+                <div class="step" data-step="2">
+                    <div class="step-indicator">Шаг 2 из 4</div>
+                    <h2>Площадь квартиры</h2>
+                    <p class="subtitle">Укажите общую площадь в квадратных метрах</p>
+                    
+                    <div class="input-group">
+                        <div class="input-wrapper">
+                            <input type="number" id="areaInput" placeholder="45" min="15" max="300" value="45">
+                            <span class="input-suffix">м²</span>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="range" id="areaSlider" min="15" max="300" value="45" step="5">
+                        <div class="range-value"><span id="areaValue">45</span> м²</div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" id="prevStep2"><span>Назад</span></button>
+                        <button class="btn btn-primary" id="nextStep2"><span>Продолжить</span></button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Класс ремонта -->
+                <div class="step" data-step="3">
+                    <div class="step-indicator">Шаг 3 из 4</div>
+                    <h2>Уровень ремонта</h2>
+                    <p class="subtitle">Выберите стандарт качества и материалов</p>
+                    
+                    <div class="options">
+                        <div class="option" data-value="rental">
+                            <div class="option-content">
+                                <div class="option-title">Под сдачу</div>
+                                <div class="option-desc">Практичные материалы, быстрый срок, оптимальная цена</div>
+                            </div>
+                        </div>
+                        <div class="option" data-value="comfort">
+                            <div class="option-content">
+                                <div class="option-title">Для себя (комфорт)</div>
+                                <div class="option-desc">Качественные материалы, продуманная эргономика</div>
+                            </div>
+                            <div class="option-badge">Выбор 70%</div>
+                        </div>
+                        <div class="option" data-value="premium">
+                            <div class="option-content">
+                                <div class="option-title">Премиум / Дизайнерский</div>
+                                <div class="option-desc">Сложные решения, идеальное исполнение, эксклюзивные материалы</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" id="prevStep3"><span>Назад</span></button>
+                        <button class="btn btn-primary" id="nextStep3" disabled><span>Продолжить</span></button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Опции -->
+                <div class="step" data-step="4">
+                    <div class="step-indicator">Шаг 4 из 4</div>
+                    <h2>Дополнительные работы</h2>
+                    <p class="subtitle">Отметьте необходимые опции</p>
+                    
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="designProject" value="design">
+                            <span class="checkbox-label">Нужен дизайн-проект</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="replanning" value="replanning">
+                            <span class="checkbox-label">Перепланировка (снос/возведение стен)</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="windows" value="windows">
+                            <span class="checkbox-label">Замена окон и входной двери</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="furniture" value="furniture">
+                            <span class="checkbox-label">Встроенная мебель (шкафы, кухня)</span>
+                        </label>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" id="prevStep4"><span>Назад</span></button>
+                        <button class="btn btn-primary" id="calculateBtn"><span>Рассчитать стоимость</span></button>
+                    </div>
+                </div>
+
+                <!-- Result -->
+                <div class="step" data-step="5">
+                    <div class="result-screen">
+                        <div class="result-icon">✨</div>
+                        <h2 class="result-title">Ориентировочная стоимость</h2>
+                        
+                        <div class="price-range">
+                            <div class="price-label">Бюджет на ремонт</div>
+                            <div class="price-value" id="priceRange">—</div>
+                            <div class="price-note">Точная смета после замера и уточнения деталей</div>
+                        </div>
+
+                        <div class="summary">
+                            <div class="summary-title">Ваш запрос:</div>
+                            <div class="summary-item">
+                                <span class="summary-label">Тип объекта</span>
+                                <span class="summary-value" id="summaryType">—</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Площадь</span>
+                                <span class="summary-value" id="summaryArea">—</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Класс ремонта</span>
+                                <span class="summary-value" id="summaryLevel">—</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Доп. работы</span>
+                                <span class="summary-value" id="summaryOptions">—</span>
+                            </div>
+                        </div>
+
+                        <div class="messenger-buttons">
+                            <a href="#" class="btn-messenger btn-whatsapp" id="whatsappBtn">
+                                <span>WhatsApp</span>
+                            </a>
+                            <a href="#" class="btn-messenger btn-telegram" id="telegramBtn">
+                                <span>Telegram</span>
+                            </a>
+                        </div>
+
+                        <button class="btn btn-restart" id="restartBtn"><span>Пересчитать</span></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Particles animation
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        createParticles();
+
+        // State management
+        const state = {
+            currentStep: 1,
+            totalSteps: 4,
+            objectType: null,
+            area: 45,
+            level: null,
+            options: []
+        };
+
+        // DOM elements
+        const progressFill = document.getElementById('progressFill');
+        const steps = document.querySelectorAll('.step');
+        
+        // Initialize
+        updateProgress();
+
+        // Step 1: Object Type
+        const objectOptions = document.querySelectorAll('[data-step="1"] .option');
+        const nextStep1Btn = document.getElementById('nextStep1');
+
+        objectOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                objectOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                state.objectType = option.dataset.value;
+                nextStep1Btn.disabled = false;
+            });
+        });
+
+        nextStep1Btn.addEventListener('click', () => goToStep(2));
+
+        // Step 2: Area
+        const areaInput = document.getElementById('areaInput');
+        const areaSlider = document.getElementById('areaSlider');
+        const areaValue = document.getElementById('areaValue');
+        const prevStep2Btn = document.getElementById('prevStep2');
+        const nextStep2Btn = document.getElementById('nextStep2');
+
+        function syncArea(value) {
+            value = Math.max(15, Math.min(300, parseInt(value) || 45));
+            state.area = value;
+            areaInput.value = value;
+            areaSlider.value = value;
+            areaValue.textContent = value;
+        }
+
+        areaInput.addEventListener('input', (e) => syncArea(e.target.value));
+        areaSlider.addEventListener('input', (e) => syncArea(e.target.value));
+
+        prevStep2Btn.addEventListener('click', () => goToStep(1));
+        nextStep2Btn.addEventListener('click', () => goToStep(3));
+
+        // Step 3: Level
+        const levelOptions = document.querySelectorAll('[data-step="3"] .option');
+        const prevStep3Btn = document.getElementById('prevStep3');
+        const nextStep3Btn = document.getElementById('nextStep3');
+
+        levelOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                levelOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                state.level = option.dataset.value;
+                nextStep3Btn.disabled = false;
+            });
+        });
+
+        prevStep3Btn.addEventListener('click', () => goToStep(2));
+        nextStep3Btn.addEventListener('click', () => goToStep(4));
+
+        // Step 4: Options - IMPROVED CHECKBOX HANDLING
+        const checkboxItems = document.querySelectorAll('.checkbox-item');
+        const prevStep4Btn = document.getElementById('prevStep4');
+        const calculateBtn = document.getElementById('calculateBtn');
+
+        checkboxItems.forEach(item => {
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            
+            // Handle click on the entire checkbox item
+            item.addEventListener('click', (e) => {
+                // Prevent double-toggling when clicking directly on checkbox
+                if (e.target === checkbox) {
+                    return;
+                }
+                
+                // Toggle checkbox
+                checkbox.checked = !checkbox.checked;
+                updateCheckboxState(item, checkbox);
+            });
+
+            // Handle direct checkbox change
+            checkbox.addEventListener('change', () => {
+                updateCheckboxState(item, checkbox);
+            });
+        });
+
+        function updateCheckboxState(item, checkbox) {
+            if (checkbox.checked) {
+                item.classList.add('checked');
+                if (!state.options.includes(checkbox.value)) {
+                    state.options.push(checkbox.value);
+                }
+            } else {
+                item.classList.remove('checked');
+                state.options = state.options.filter(opt => opt !== checkbox.value);
+            }
+        }
+
+        prevStep4Btn.addEventListener('click', () => goToStep(3));
+        calculateBtn.addEventListener('click', calculatePrice);
+
+        // Navigation
+        function goToStep(stepNumber) {
+            state.currentStep = stepNumber;
+            steps.forEach(step => {
+                step.classList.remove('active');
+                if (parseInt(step.dataset.step) === stepNumber) {
+                    step.classList.add('active');
+                }
+            });
+            updateProgress();
+            
+            // Scroll to top on mobile
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateProgress() {
+            const progress = (state.currentStep / state.totalSteps) * 100;
+            progressFill.style.width = `${progress}%`;
+        }
+
+        // Price calculation engine
+        function calculatePrice() {
+            const basePrice = 30000;
+
+            const typeCoefficients = {
+                'newbuild-concrete': 1.0,
+                'newbuild-whitebox': 0.8,
+                'secondary': 1.35
+            };
+
+            const levelCoefficients = {
+                'rental': 0.7,
+                'comfort': 1.0,
+                'premium': 1.65
+            };
+
+            let areaFactor = 1.0;
+            if (state.area < 35) {
+                areaFactor = 1.25;
+            } else if (state.area > 90) {
+                areaFactor = 0.88;
+            } else if (state.area > 120) {
+                areaFactor = 0.82;
+            }
+
+            const typeCoef = typeCoefficients[state.objectType] || 1.0;
+            const levelCoef = levelCoefficients[state.level] || 1.0;
+
+            let baseTotal = basePrice * state.area * typeCoef * levelCoef * areaFactor;
+
+            let optionsCost = 0;
+
+            if (state.options.includes('design')) {
+                const designPrice = state.level === 'premium' ? 2500 : 
+                                  state.level === 'comfort' ? 2000 : 1500;
+                optionsCost += designPrice * state.area;
+            }
+
+            if (state.options.includes('replanning')) {
+                optionsCost += 150000 + (state.area * 800);
+            }
+
+            if (state.options.includes('windows')) {
+                const windowCost = state.level === 'premium' ? 200000 : 
+                                 state.level === 'comfort' ? 140000 : 100000;
+                optionsCost += windowCost;
+            }
+
+            if (state.options.includes('furniture')) {
+                optionsCost += state.area * (state.level === 'premium' ? 35000 : 
+                                           state.level === 'comfort' ? 25000 : 18000);
+            }
+
+            const finishingMaterialsCoef = state.level === 'premium' ? 0.8 : 
+                                          state.level === 'comfort' ? 0.55 : 0.35;
+            
+            baseTotal += baseTotal * finishingMaterialsCoef;
+
+            const totalCost = baseTotal + optionsCost;
+
+            const minPrice = Math.round(totalCost * 0.88 / 50000) * 50000;
+            const maxPrice = Math.round(totalCost * 1.12 / 50000) * 50000;
+
+            displayResults(minPrice, maxPrice);
+            goToStep(5);
+        }
+
+        function formatPrice(price) {
+            return price.toLocaleString('ru-RU') + ' ₽';
+        }
+
+        function displayResults(minPrice, maxPrice) {
+            document.getElementById('priceRange').textContent = 
+                `${formatPrice(minPrice)} — ${formatPrice(maxPrice)}`;
+
+            const typeNames = {
+                'newbuild-concrete': 'Новостройка (бетон)',
+                'newbuild-whitebox': 'Новостройка (white box)',
+                'secondary': 'Вторичное жильё'
+            };
+
+            const levelNames = {
+                'rental': 'Под сдачу',
+                'comfort': 'Комфорт',
+                'premium': 'Премиум'
+            };
+
+            document.getElementById('summaryType').textContent = typeNames[state.objectType];
+            document.getElementById('summaryArea').textContent = `${state.area} м²`;
+            document.getElementById('summaryLevel').textContent = levelNames[state.level];
+            
+            const optionsText = state.options.length > 0 ? 
+                state.options.map(opt => {
+                    const optionNames = {
+                        'design': 'Дизайн-проект',
+                        'replanning': 'Перепланировка',
+                        'windows': 'Окна и двери',
+                        'furniture': 'Мебель'
+                    };
+                    return optionNames[opt];
+                }).join(', ') : 'Не выбраны';
+
+            document.getElementById('summaryOptions').textContent = optionsText;
+
+            const message = generateMessage(typeNames[state.objectType], levelNames[state.level], minPrice, maxPrice);
+            
+            const whatsappLink = `https://wa.me/79990000000?text=${encodeURIComponent(message)}`;
+            const telegramLink = `https://t.me/share/url?url=&text=${encodeURIComponent(message)}`;
+
+            document.getElementById('whatsappBtn').href = whatsappLink;
+            document.getElementById('telegramBtn').href = telegramLink;
+        }
+
+        function generateMessage(typeName, levelName, minPrice, maxPrice) {
+            const optionsText = state.options.length > 0 ?
+                `\n📋 Опции: ${state.options.map(opt => {
+                    const names = {
+                        'design': 'Дизайн-проект',
+                        'replanning': 'Перепланировка',
+                        'windows': 'Замена окон',
+                        'furniture': 'Мебель'
+                    };
+                    return names[opt];
+                }).join(', ')}` : '';
+
+            return `Здравствуйте! Рассчитал стоимость ремонта на вашем сайте:
+
+🏠 ${typeName}, ${state.area} м²
+🛠 Уровень: ${levelName}${optionsText}
+
+💰 Ориентир: ${formatPrice(minPrice)} — ${formatPrice(maxPrice)}
+
+Хочу уточнить детали и обсудить возможность замера.`;
+        }
+
+        // Restart
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            state.currentStep = 1;
+            state.objectType = null;
+            state.area = 45;
+            state.level = null;
+            state.options = [];
+
+            objectOptions.forEach(opt => opt.classList.remove('selected'));
+            levelOptions.forEach(opt => opt.classList.remove('selected'));
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            checkboxItems.forEach(item => item.classList.remove('checked'));
+
+            nextStep1Btn.disabled = true;
+            nextStep3Btn.disabled = true;
+
+            syncArea(45);
+            goToStep(1);
+        });
+    </script>
+</body>
+</html>
